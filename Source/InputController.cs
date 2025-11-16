@@ -1,0 +1,57 @@
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Celeste.Mod.AutoPlayer;
+
+/// Controls the sequence of inputs for the autoplayer
+public class InputController {
+    private List<InputFrame> inputs = [];
+    private int currentFrameIndex = 0;
+    private int framesInCurrentInput = 0;
+    private bool isRunning = false;
+
+    public bool IsRunning => isRunning;
+    public int TotalFrames => inputs.Sum(i => i.Frames);
+
+    /// Initialize the input sequence
+    public void Initialize(params InputFrame[] sequence) {
+        inputs = new List<InputFrame>(sequence);
+        currentFrameIndex = 0;
+        framesInCurrentInput = 0;
+        isRunning = true;
+    }
+
+    /// Get the current input to apply
+    public Actions GetCurrentInput() {
+        if (!isRunning || inputs.Count == 0) {
+            return Actions.None;
+        }
+
+        if (currentFrameIndex >= inputs.Count) {
+            isRunning = false;
+            return Actions.None;
+        }
+
+        var currentInput = inputs[currentFrameIndex];
+
+        // Advance to next input frame after we've held this one for the specified duration
+        framesInCurrentInput++;
+        if (framesInCurrentInput >= currentInput.Frames) {
+            currentFrameIndex++;
+            framesInCurrentInput = 0;
+
+            if (currentFrameIndex < inputs.Count) {
+                Logger.Log(nameof(AutoPlayerModule), $"Move: {inputs[currentFrameIndex].Action}");
+            }
+        }
+
+        return currentInput.Action;
+    }
+
+    /// Reset the input controller
+    public void Stop() {
+        isRunning = false;
+        currentFrameIndex = 0;
+        framesInCurrentInput = 0;
+    }
+}
