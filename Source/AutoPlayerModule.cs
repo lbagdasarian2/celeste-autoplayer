@@ -49,6 +49,13 @@ namespace Celeste.Mod.AutoPlayer {
                 DebugLog.Write("[LOAD] Initializing hotkey handler...");
                 Logger.Log(nameof(AutoPlayerModule), "[LOAD] Initializing hotkey handler...");
                 HotkeyHandler.Initialize();
+                DebugLog.Write("[LOAD] Hotkey handler initialized");
+                Logger.Log(nameof(AutoPlayerModule), "[LOAD] Hotkey handler initialized");
+
+                // Initialize game state monitor
+                DebugLog.Write("[LOAD] Initializing game state monitor...");
+                Logger.Log(nameof(AutoPlayerModule), "[LOAD] Initializing game state monitor...");
+                GameStateMonitor.Initialize();
                 DebugLog.Write("[LOAD] AutoPlayer ready - press F7 to toggle");
                 Logger.Log(nameof(AutoPlayerModule), "[LOAD] AutoPlayer ready - press F7 to toggle");
             } catch (Exception ex) {
@@ -63,6 +70,7 @@ namespace Celeste.Mod.AutoPlayer {
             Playback.StopAutoplay();
             Playback.Cleanup();
             HotkeyHandler.Cleanup();
+            GameStateMonitor.Cleanup();
         }
     }
 }

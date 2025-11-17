@@ -6,7 +6,7 @@
         <AssemblyName>AutoPlayer</AssemblyName>
         <RootNamespace>Celeste.Mod.AutoPlayer</RootNamespace>
         <LangVersion>latest</LangVersion>
-        <Version>1.0.13</Version>
+        <Version>1.0.15</Version>
         <NoWarn>CS1705;MSB3277</NoWarn>
         <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
         <CelestePrefix Condition="'$(CelestePrefix)' == '' And Exists('..\..\..\Celeste.dll')">..\..\..</CelestePrefix>
