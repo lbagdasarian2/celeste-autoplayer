@@ -2,10 +2,13 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
+        <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
         <AssemblyName>AutoPlayer</AssemblyName>
         <RootNamespace>Celeste.Mod.AutoPlayer</RootNamespace>
         <LangVersion>latest</LangVersion>
-        <Version>1.0.1</Version>
+        <Version>1.0.13</Version>
+        <NoWarn>CS1705;MSB3277</NoWarn>
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
         <CelestePrefix Condition="'$(CelestePrefix)' == '' And Exists('..\..\..\Celeste.dll')">..\..\..</CelestePrefix>
         <CelestePrefix Condition="'$(CelestePrefix)' == ''">lib-stripped</CelestePrefix>
         <ZippedFiles>..\everest.yaml;..\bin\**\*.*;..\Audio\**\*.*;..\Dialog\**\*.*;..\Graphics\**\*.*;..\Ahorn\**\*.*;..\Loenn\**\*.*</ZippedFiles>

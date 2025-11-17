@@ -4,10 +4,9 @@ using Microsoft.Xna.Framework.Input;
 using Monocle;
 using MonoMod.RuntimeDetour;
 
-namespace Celeste.Mod.AutoPlayer;
-
-/// Handles hotkey input for toggling AutoPlayer
-internal static class HotkeyHandler {
+namespace Celeste.Mod.AutoPlayer {
+    /// Handles hotkey input for toggling AutoPlayer
+    internal static class HotkeyHandler {
     private static KeyboardState previousKeyboardState;
     private static bool hooksApplied = false;
 
@@ -71,11 +70,12 @@ internal static class HotkeyHandler {
         } else {
             DebugLog.Write("[F7] AutoPlayer ENABLED");
             Logger.Log(nameof(AutoPlayerModule), "[F7] AutoPlayer ENABLED");
-            // Start the autoplayer sequence: move right for 15 frames, then jump for 1 frame
+            // Start the autoplayer sequence: move right for 60 frames (1 second), then jump for 1 frame
             Playback.StartAutoplay(
-                new InputFrame(Actions.Right, 15),
+                new InputFrame(Actions.Right, 60),
                 new InputFrame(Actions.Jump, 1)
             );
         }
+    }
     }
 }

@@ -1,5 +1,6 @@
-namespace Celeste.Mod.AutoPlayer;
+namespace Celeste.Mod.AutoPlayer {
 
-public class AutoPlayerModuleSaveData : EverestModuleSaveData {
+    public class AutoPlayerModuleSaveData : EverestModuleSaveData {
 
+    }
 }
