@@ -19,6 +19,7 @@ public class InputController {
         currentFrameIndex = 0;
         framesInCurrentInput = 0;
         isRunning = true;
+        Logger.Log(nameof(AutoPlayerModule), $"Input sequence initialized with {inputs.Count} actions, total frames: {TotalFrames}");
     }
 
     /// Get the current input to apply
@@ -29,6 +30,7 @@ public class InputController {
 
         if (currentFrameIndex >= inputs.Count) {
             isRunning = false;
+            Logger.Log(nameof(AutoPlayerModule), "Input sequence completed");
             return Actions.None;
         }
 
@@ -37,11 +39,12 @@ public class InputController {
         // Advance to next input frame after we've held this one for the specified duration
         framesInCurrentInput++;
         if (framesInCurrentInput >= currentInput.Frames) {
+            Logger.Log(nameof(AutoPlayerModule), $"Completed {currentInput.Action} for {currentInput.Frames} frames (total frames elapsed: {currentFrameIndex * inputs[0].Frames + framesInCurrentInput})");
             currentFrameIndex++;
             framesInCurrentInput = 0;
 
             if (currentFrameIndex < inputs.Count) {
-                Logger.Log(nameof(AutoPlayerModule), $"Move: {inputs[currentFrameIndex].Action}");
+                Logger.Log(nameof(AutoPlayerModule), $"Transitioning to next action: {inputs[currentFrameIndex].Action}");
             }
         }
 
