@@ -10,7 +10,7 @@ namespace Celeste.Mod.AutoPlayer {
     internal static class GameStateMonitor {
         private static readonly HttpClient httpClient = new();
         private const string GAMESTATE_URL = "http://localhost:32270/tas/game_state";
-        private const int FETCH_INTERVAL = 20; // Fetch every 20 frames
+        private const int FETCH_INTERVAL = 100; // Fetch every 10 frames (~166ms)
         private static bool hooksApplied = false;
         private static bool monitoringEnabled = false;
         private static int frameCounter = -1; // Start at -1 so first frame triggers fetch immediately
@@ -56,9 +56,6 @@ namespace Celeste.Mod.AutoPlayer {
         }
 
         private static void On_Engine_Update(On.Monocle.Engine.orig_Update orig, Engine self, Microsoft.Xna.Framework.GameTime gameTime) {
-            // Reset the update flag at the start of each frame
-            gameStateUpdatedThisFrame = false;
-
             orig(self, gameTime);
 
             if (monitoringEnabled) {
@@ -80,6 +77,12 @@ namespace Celeste.Mod.AutoPlayer {
 
                     // Log the full JSON response
                     DebugLog.Write($"[GameState] Full JSON: {content}");
+
+                    // Skip if response is null
+                    if (content == "null" || string.IsNullOrEmpty(content)) {
+                        DebugLog.Write("[GameStateMonitor] Response is null - CelesteTAS endpoint not ready");
+                        return;
+                    }
 
                     // Parse to validate JSON and extract key info
                     using (var doc = JsonDocument.Parse(content)) {
@@ -184,6 +187,9 @@ namespace Celeste.Mod.AutoPlayer {
                         // Mark that game state was updated this frame
                         gameStateUpdatedThisFrame = true;
 
+                        // Log the critical state info for debugging jump behavior
+                        DebugLog.Write($"[GameStateMonitor] STATE FETCHED: OnGround={onGround}, Pos({posX:F1},{posY:F1}), Speed({speedX:F2},{speedY:F2}), State={playerStateName}");
+
                         // Log extracted player info
                         DebugLog.Write($"[GameState] Player: Pos({posX:F1},{posY:F1}) PosRem({posRemX:F1},{posRemY:F1}) Speed({speedX:F2},{speedY:F2}) StarFlyLerp={starFlySpeedLerp:F2}");
                         DebugLog.Write($"[GameState] Player: OnGround={onGround} Holding={isHolding} JumpTimer={jumpTimer} AutoJump={autoJump} MaxFall={maxFall}");
@@ -223,6 +229,12 @@ namespace Celeste.Mod.AutoPlayer {
         /// Check if game state was updated this frame (safe for AI to use latest state)
         internal static bool WasUpdatedThisFrame() {
             return gameStateUpdatedThisFrame;
+        }
+
+        /// Clear the update flag after AI has processed the state
+        internal static void ClearUpdateFlag() {
+            gameStateUpdatedThisFrame = false;
+            DebugLog.Write("[GameStateMonitor] Update flag cleared after AI processing");
         }
     }
 }

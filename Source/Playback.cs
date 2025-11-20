@@ -176,7 +176,9 @@ namespace Celeste.Mod.AutoPlayer {
         var gamepadData = MInput.GamePads[0];
         gamepadData.PreviousState = gamepadData.CurrentState;
         gamepadData.CurrentState = gamePadState;
-        DebugLog.Write($"GamePad state updated: stickX={gamePadState.ThumbSticks.Left.X}, buttonFlags={gamePadState.Buttons}");
+        DebugLog.Write($"GamePad state BEFORE: {gamepadData.PreviousState.Buttons}");
+        DebugLog.Write($"GamePad state AFTER: {gamePadState.Buttons}");
+        DebugLog.Write($"buttonFlags={((int)buttonFlags):X8}, Buttons.A={((int)Buttons.A):X8}, A={((buttonFlags & Buttons.A) != 0 ? "set" : "not set")}");
 
         // Update keyboard state if needed
         if (keysToPress.Count > 0) {
@@ -197,7 +199,7 @@ namespace Celeste.Mod.AutoPlayer {
             DebugLog.Write($"Keyboard state updated with keys: {string.Join(", ", keysToPress)}");
         }
 
-        // CRITICAL: Call UpdateVirtualInputs to apply the state to virtual buttons (this is what CelesteTAS does!)
+        // CRITICAL: Call UpdateVirtualInputs to apply the state to virtual buttons
         MInput.UpdateVirtualInputs();
         DebugLog.Write("MInput.UpdateVirtualInputs() called to apply inputs");
     }
