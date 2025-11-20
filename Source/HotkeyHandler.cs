@@ -68,13 +68,10 @@ namespace Celeste.Mod.AutoPlayer {
             Logger.Log(nameof(AutoPlayerModule), "[F7] AutoPlayer DISABLED");
             Playback.StopAutoplay();
         } else {
-            DebugLog.Write("[F7] AutoPlayer ENABLED");
-            Logger.Log(nameof(AutoPlayerModule), "[F7] AutoPlayer ENABLED");
-            // Start the autoplayer sequence: move right for 60 frames (1 second), then jump for 1 frame
-            Playback.StartAutoplay(
-                new InputFrame(Actions.Right, 60),
-                new InputFrame(Actions.Jump, 1)
-            );
+            DebugLog.Write("[F7] AutoPlayer ENABLED - Dynamic AI Mode");
+            Logger.Log(nameof(AutoPlayerModule), "[F7] AutoPlayer ENABLED - Dynamic AI Mode");
+            // Start autoplayer in dynamic AI mode
+            Playback.StartDynamicAutoplay();
         }
     }
     }

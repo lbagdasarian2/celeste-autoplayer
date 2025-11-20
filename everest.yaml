@@ -1,5 +1,5 @@
 - Name: AutoPlayer
-  Version: 1.0.15
+  Version: 1.0.23
   DLL: bin/AutoPlayer.dll
   Dependencies:
     - Name: EverestCore

@@ -213,6 +213,13 @@ namespace Celeste.Mod.AutoPlayer {
         Logger.Log(nameof(AutoPlayerModule), "AutoPlayer started");
     }
 
+    /// Start autoplayer in dynamic AI mode
+    internal static void StartDynamicAutoplay() {
+        DebugLog.Write("AutoPlayer started in Dynamic AI mode");
+        inputController.InitializeDynamicAI();
+        Logger.Log(nameof(AutoPlayerModule), "AutoPlayer started in Dynamic AI mode");
+    }
+
     /// Stop the autoplayer
     internal static void StopAutoplay() {
         DebugLog.Write("AutoPlayer stopped");
