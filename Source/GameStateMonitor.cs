@@ -98,20 +98,20 @@ namespace Celeste.Mod.AutoPlayer {
                         float posX = 0f, posY = 0f, posRemX = 0f, posRemY = 0f;
                         float speedX = 0f, speedY = 0f, starFlySpeedLerp = 0f;
                         bool onGround = false, isHolding = false, autoJump = false;
-                        int jumpTimer = 0, maxFall = 0;
+                        float jumpTimer = 0f, maxFall = 0f;
 
                         if (root.TryGetProperty("Player", out var playerElement)) {
                             if (playerElement.TryGetProperty("Position", out var posElement)) {
-                                posX = posElement.GetProperty("X").GetSingle();
-                                posY = posElement.GetProperty("Y").GetSingle();
+                                if (posElement.TryGetProperty("X", out var xElem)) posX = xElem.GetSingle();
+                                if (posElement.TryGetProperty("Y", out var yElem)) posY = yElem.GetSingle();
                             }
                             if (playerElement.TryGetProperty("PositionRemainder", out var posRemElement)) {
-                                posRemX = posRemElement.GetProperty("X").GetSingle();
-                                posRemY = posRemElement.GetProperty("Y").GetSingle();
+                                if (posRemElement.TryGetProperty("X", out var xElem)) posRemX = xElem.GetSingle();
+                                if (posRemElement.TryGetProperty("Y", out var yElem)) posRemY = yElem.GetSingle();
                             }
                             if (playerElement.TryGetProperty("Speed", out var speedElement)) {
-                                speedX = speedElement.GetProperty("X").GetSingle();
-                                speedY = speedElement.GetProperty("Y").GetSingle();
+                                if (speedElement.TryGetProperty("X", out var xElem)) speedX = xElem.GetSingle();
+                                if (speedElement.TryGetProperty("Y", out var yElem)) speedY = yElem.GetSingle();
                             }
                             if (playerElement.TryGetProperty("starFlySpeedLerp", out var starFlyElement)) {
                                 starFlySpeedLerp = starFlyElement.GetSingle();
@@ -123,13 +123,13 @@ namespace Celeste.Mod.AutoPlayer {
                                 isHolding = holdingElement.GetBoolean();
                             }
                             if (playerElement.TryGetProperty("JumpTimer", out var jumpTimerElement)) {
-                                jumpTimer = jumpTimerElement.GetInt32();
+                                jumpTimer = jumpTimerElement.GetSingle();
                             }
                             if (playerElement.TryGetProperty("AutoJump", out var autoJumpElement)) {
                                 autoJump = autoJumpElement.GetBoolean();
                             }
                             if (playerElement.TryGetProperty("MaxFall", out var maxFallElement)) {
-                                maxFall = maxFallElement.GetInt32();
+                                maxFall = maxFallElement.GetSingle();
                             }
                         }
 
@@ -139,14 +139,14 @@ namespace Celeste.Mod.AutoPlayer {
 
                         if (root.TryGetProperty("Level", out var levelElement)) {
                             if (levelElement.TryGetProperty("Bounds", out var boundsElement)) {
-                                levelBoundsX = boundsElement.GetProperty("X").GetSingle();
-                                levelBoundsY = boundsElement.GetProperty("Y").GetSingle();
-                                levelBoundsW = boundsElement.GetProperty("W").GetSingle();
-                                levelBoundsH = boundsElement.GetProperty("H").GetSingle();
+                                if (boundsElement.TryGetProperty("X", out var xElem)) levelBoundsX = xElem.GetSingle();
+                                if (boundsElement.TryGetProperty("Y", out var yElem)) levelBoundsY = yElem.GetSingle();
+                                if (boundsElement.TryGetProperty("W", out var wElem)) levelBoundsW = wElem.GetSingle();
+                                if (boundsElement.TryGetProperty("H", out var hElem)) levelBoundsH = hElem.GetSingle();
                             }
                             if (levelElement.TryGetProperty("WindDirection", out var windElement)) {
-                                windX = windElement.GetProperty("X").GetSingle();
-                                windY = windElement.GetProperty("Y").GetSingle();
+                                if (windElement.TryGetProperty("X", out var xElem)) windX = xElem.GetSingle();
+                                if (windElement.TryGetProperty("Y", out var yElem)) windY = yElem.GetSingle();
                             }
                         }
 

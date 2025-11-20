@@ -45,7 +45,6 @@ namespace Celeste.Mod.AutoPlayer {
             if (useDynamicAI) {
                 // Only query AI if game state was updated this frame
                 bool wasUpdated = GameStateMonitor.WasUpdatedThisFrame();
-                DebugLog.Write($"[InputController] DynamicAI: WasUpdatedThisFrame={wasUpdated}");
 
                 if (wasUpdated) {
                     var gameState = GameStateMonitor.GetLatestGameState();
@@ -64,18 +63,13 @@ namespace Celeste.Mod.AutoPlayer {
 
                         // Clear the update flag after processing this frame's state
                         GameStateMonitor.ClearUpdateFlag();
-                    } else {
-                        DebugLog.Write("[InputController] Game state is null");
                     }
-                } else {
-                    DebugLog.Write("[InputController] Waiting for game state update...");
                 }
 
                 // Return the current action from our queue (keep holding until action expires)
                 if (inputs.Count > 0 && currentFrameIndex < inputs.Count) {
                     var aiInput = inputs[currentFrameIndex];
 
-                    DebugLog.Write($"[InputController] Returning action: {aiInput.Action} (frame {framesInCurrentInput + 1}/{aiInput.Frames})");
                     var actionToReturn = aiInput.Action;
 
                     framesInCurrentInput++;
@@ -87,7 +81,6 @@ namespace Celeste.Mod.AutoPlayer {
                     return actionToReturn;
                 }
 
-                DebugLog.Write("[InputController] No action queued yet");
                 return Actions.None;
             }
 

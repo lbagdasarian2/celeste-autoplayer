@@ -81,8 +81,8 @@ namespace Celeste.Mod.AutoPlayer {
         // If the autoplayer is running, inject inputs AFTER original update processes keyboard/mouse
         if (inputController.IsRunning) {
             var action = inputController.GetCurrentInput();
-            DebugLog.Write($"MInput.Update: action={action} (AFTER orig)");
             if (action != Actions.None) {
+                DebugLog.Write($"MInput.Update: action={action} (AFTER orig)");
                 Logger.Log(nameof(AutoPlayerModule), $"[v{GetVersion()}] Injecting input: {action}");
             }
             ApplyInput(action);
@@ -91,7 +91,9 @@ namespace Celeste.Mod.AutoPlayer {
 
     /// Apply the input action to the game
     private static void ApplyInput(Actions action) {
-        DebugLog.Write($"ApplyInput called with action={action}");
+        if (action != Actions.None) {
+            DebugLog.Write($"ApplyInput called with action={action}");
+        }
 
         // Track which keys should be pressed for keyboard input
         var keysToPress = new List<Keys>();
@@ -176,9 +178,6 @@ namespace Celeste.Mod.AutoPlayer {
         var gamepadData = MInput.GamePads[0];
         gamepadData.PreviousState = gamepadData.CurrentState;
         gamepadData.CurrentState = gamePadState;
-        DebugLog.Write($"GamePad state BEFORE: {gamepadData.PreviousState.Buttons}");
-        DebugLog.Write($"GamePad state AFTER: {gamePadState.Buttons}");
-        DebugLog.Write($"buttonFlags={((int)buttonFlags):X8}, Buttons.A={((int)Buttons.A):X8}, A={((buttonFlags & Buttons.A) != 0 ? "set" : "not set")}");
 
         // Update keyboard state if needed
         if (keysToPress.Count > 0) {
@@ -196,12 +195,10 @@ namespace Celeste.Mod.AutoPlayer {
             var newKeyboardState = new KeyboardState(pressedKeys.ToArray());
             MInput.Keyboard.PreviousState = MInput.Keyboard.CurrentState;
             MInput.Keyboard.CurrentState = newKeyboardState;
-            DebugLog.Write($"Keyboard state updated with keys: {string.Join(", ", keysToPress)}");
         }
 
         // CRITICAL: Call UpdateVirtualInputs to apply the state to virtual buttons
         MInput.UpdateVirtualInputs();
-        DebugLog.Write("MInput.UpdateVirtualInputs() called to apply inputs");
     }
 
     private static string GetVersion() {

@@ -11,7 +11,7 @@ namespace Celeste.Mod.AutoPlayer {
             public float PlayerSpeedY { get; set; }
             public bool OnGround { get; set; }
             public bool IsHolding { get; set; }
-            public int JumpTimer { get; set; }
+            public float JumpTimer { get; set; }
             public bool AutoJump { get; set; }
             public float LevelBoundsX { get; set; }
             public float LevelBoundsY { get; set; }
