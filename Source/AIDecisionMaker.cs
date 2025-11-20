@@ -35,12 +35,12 @@ namespace Celeste.Mod.AutoPlayer {
         }
 
         /// Decides what action to take based on current game state
-        /// Returns the action(s) to perform and duration in frames
-        public static (Actions action, int frames) DecideNextAction(GameStateSnapshot state) {
+        /// Returns a sequence of input frames
+        public static InputFrame[] DecideNextAction(GameStateSnapshot state) {
             if (state == null) {
                 DebugLog.Write("[AIDecisionMaker] Game state is NULL");
                 framesSinceLastJump++;
-                return (Actions.None, 1);
+                return new[] { new InputFrame(Actions.None, 1) };
             }
 
             // Increment frame counter
@@ -56,17 +56,25 @@ namespace Celeste.Mod.AutoPlayer {
                 framesSinceLastJump = 0;
             }
 
-            // If player is on ground and we haven't jumped yet this cycle, jump
+            // If player is on ground and we haven't jumped yet this cycle, perform the jump sequence
             if (state.OnGround && !hasJumpedThisFrame) {
                 hasJumpedThisFrame = true;
                 framesSinceLastJump = 0;
-                DebugLog.Write("[AIDecisionMaker] Decision: JUMP (on ground, not yet jumped)");
-                return (Actions.Jump, 1);
+                DebugLog.Write("[AIDecisionMaker] Decision: JUMP sequence (10 frames jump, then immediately dash+up+right+jump for 20 frames)");
+
+                // Build the input sequence:
+                // 1. Hold jump for 10 frames
+                // 2. Hold dash + up + right + jump for 20 frames (no gap, immediate combo)
+                return new[] {
+                    new InputFrame(Actions.Jump, 10),
+                    new InputFrame(Actions.Dash | Actions.Up | Actions.Right | Actions.Jump, 20)
+                };
             }
 
-            // Otherwise do nothing
-            DebugLog.Write("[AIDecisionMaker] Decision: NONE");
-            return (Actions.None, 1);
+            // Not jumping yet - just dash, but use shorter frame count so AI can re-query sooner
+            // This allows the AI to check if it's time to jump again before too many frames pass
+            DebugLog.Write($"[AIDecisionMaker] Decision: Dash (for {Math.Min(30, framesSinceLastJump == 0 ? 100 : 30)} frames)");
+            return new[] { new InputFrame(Actions.Dash, 30) };  // Hold dash for 30 frames, then AI will query again
         }
     }
 }
