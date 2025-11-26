@@ -43,10 +43,40 @@ namespace Celeste.Mod.AutoPlayer {
 
             // Dynamic AI mode: query the AI decision maker based on current game state
             if (useDynamicAI) {
-                // Return the current action from our queue first
+                // Only query AI if game state was updated this frame
+                bool wasUpdated = GameStateMonitor.WasUpdatedThisFrame();
+                DebugLog.Write($"[InputController] DynamicAI: WasUpdatedThisFrame={wasUpdated}");
+
+                if (wasUpdated) {
+                    var gameState = GameStateMonitor.GetLatestGameState();
+                    if (gameState != null) {
+                        // Make a decision based on current game state
+                        var sequence = AIDecisionMaker.DecideNextAction(gameState);
+
+                        // Store the sequence if we've completed the current one
+                        if (inputs.Count == 0 || currentFrameIndex >= inputs.Count) {
+                            DebugLog.Write($"[InputController] AI Decision Changed: {sequence.Length} frames queued");
+                            inputs.Clear();
+                            inputs.AddRange(sequence);
+                            currentFrameIndex = 0;
+                            framesInCurrentInput = 0;
+                        }
+
+                        // Clear the update flag after processing this frame's state
+                        GameStateMonitor.ClearUpdateFlag();
+                    } else {
+                        DebugLog.Write("[InputController] Game state is null");
+                    }
+                } else {
+                    // waiting for game state to update
+                    DebugLog.Write("[InputController] Waiting for game state update...");
+                }
+
+                // Return the current action from our queue (keep holding until action expires)
                 if (inputs.Count > 0 && currentFrameIndex < inputs.Count) {
                     var aiInput = inputs[currentFrameIndex];
 
+                    DebugLog.Write($"[InputController] Returning action: {aiInput.Action} (frame {framesInCurrentInput + 1}/{aiInput.Frames})");
                     var actionToReturn = aiInput.Action;
 
                     framesInCurrentInput++;
@@ -55,46 +85,10 @@ namespace Celeste.Mod.AutoPlayer {
                         framesInCurrentInput = 0;
                     }
 
-                    // Only query AI for a new decision AFTER we've completed the current sequence
-                    if (currentFrameIndex >= inputs.Count) {
-                        // Only query AI if game state was updated this frame
-                        bool wasUpdated = GameStateMonitor.WasUpdatedThisFrame();
-
-                        if (wasUpdated) {
-                            var gameState = GameStateMonitor.GetLatestGameState();
-                            if (gameState != null) {
-                                // Make a decision based on current game state
-                                var sequence = AIDecisionMaker.DecideNextAction(gameState);
-
-                                DebugLog.Write($"[InputController] AI Decision Changed: {sequence.Length} frames queued");
-                                inputs.Clear();
-                                inputs.AddRange(sequence);
-                                currentFrameIndex = 0;
-                                framesInCurrentInput = 0;
-
-                                // Clear the update flag after processing this frame's state
-                                GameStateMonitor.ClearUpdateFlag();
-                            }
-                        }
-                    }
-
                     return actionToReturn;
                 }
 
-                // No current sequence, try to queue one
-                bool wasUpdated2 = GameStateMonitor.WasUpdatedThisFrame();
-                if (wasUpdated2) {
-                    var gameState = GameStateMonitor.GetLatestGameState();
-                    if (gameState != null) {
-                        var sequence = AIDecisionMaker.DecideNextAction(gameState);
-                        DebugLog.Write($"[InputController] AI Decision Changed: {sequence.Length} frames queued");
-                        inputs.AddRange(sequence);
-                        currentFrameIndex = 0;
-                        framesInCurrentInput = 0;
-                        GameStateMonitor.ClearUpdateFlag();
-                    }
-                }
-
+                DebugLog.Write("[InputController] No action queued yet");
                 return Actions.None;
             }
 

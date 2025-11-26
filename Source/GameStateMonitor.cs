@@ -10,7 +10,7 @@ namespace Celeste.Mod.AutoPlayer {
     internal static class GameStateMonitor {
         private static readonly HttpClient httpClient = new();
         private const string GAMESTATE_URL = "http://localhost:32270/tas/game_state";
-        private const int FETCH_INTERVAL = 100; // Fetch every 10 frames (~166ms)
+        private const int FETCH_INTERVAL = 300; // Fetch every 100 frames (~1.7s)
         private static bool hooksApplied = false;
         private static bool monitoringEnabled = false;
         private static int frameCounter = -1; // Start at -1 so first frame triggers fetch immediately
