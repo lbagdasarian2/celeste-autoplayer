@@ -18,6 +18,12 @@ namespace Celeste.Mod.AutoPlayer {
         private readonly HttpClient httpClient = new();
         private const string AI_DECISION_SERVICE_URL = "http://localhost:5001/api/decision/decide";
 
+        // JSON options for serializing/deserializing with camelCase (service convention)
+        private static readonly JsonSerializerOptions JsonOptions = new() {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
         public bool IsRunning => isRunning;
         public int TotalFrames => inputs.Sum(i => i.Frames);
 
@@ -141,8 +147,8 @@ namespace Celeste.Mod.AutoPlayer {
                 // Convert game state to DTO
                 var gameStateDto = GameStateDto.FromSnapshot(gameState);
 
-                // Serialize to JSON
-                var json = JsonSerializer.Serialize(gameStateDto);
+                // Serialize to JSON with camelCase
+                var json = JsonSerializer.Serialize(gameStateDto, JsonOptions);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // Send POST request to AI Decision Service
@@ -157,7 +163,7 @@ namespace Celeste.Mod.AutoPlayer {
                         var root = doc.RootElement;
 
                         if (root.TryGetProperty("sequence", out var sequenceElement)) {
-                            var sequence = JsonSerializer.Deserialize<InputFrameDto[]>(sequenceElement.GetRawText());
+                            var sequence = JsonSerializer.Deserialize<InputFrameDto[]>(sequenceElement.GetRawText(), JsonOptions);
 
                             if (sequence != null && sequence.Length > 0) {
                                 // Only replace sequence if we've completed the current one
