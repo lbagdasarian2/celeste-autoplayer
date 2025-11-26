@@ -1,5 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Celeste.Mod.AutoPlayer {
 
@@ -10,6 +15,8 @@ namespace Celeste.Mod.AutoPlayer {
         private int framesInCurrentInput = 0;
         private bool isRunning = false;
         private bool useDynamicAI = false;
+        private readonly HttpClient httpClient = new();
+        private const string AI_DECISION_SERVICE_URL = "http://localhost:5001/api/decision/decide";
 
         public bool IsRunning => isRunning;
         public int TotalFrames => inputs.Sum(i => i.Frames);
@@ -41,7 +48,7 @@ namespace Celeste.Mod.AutoPlayer {
                 return Actions.None;
             }
 
-            // Dynamic AI mode: query the AI decision maker based on current game state
+            // Dynamic AI mode: query the AI decision service based on current game state
             if (useDynamicAI) {
                 // Only query AI if game state was updated this frame
                 bool wasUpdated = GameStateMonitor.WasUpdatedThisFrame();
@@ -51,18 +58,15 @@ namespace Celeste.Mod.AutoPlayer {
                     var gameState = GameStateMonitor.GetLatestGameState();
                     if (gameState != null) {
                         // Make a decision based on current game state
-                        var sequence = AIDecisionMaker.DecideNextAction(gameState);
-
-                        // Store the sequence if we've completed the current one
-                        if (inputs.Count == 0 || currentFrameIndex >= inputs.Count) {
-                            DebugLog.Write($"[InputController] AI Decision Changed: {sequence.Length} frames queued");
-                            inputs.Clear();
-                            inputs.AddRange(sequence);
-                            currentFrameIndex = 0;
-                            framesInCurrentInput = 0;
+                        if (AISourceConfig.UseRemoteAIService) {
+                            // Use remote HTTP service
+                            _ = QueryAIDecisionServiceAsync(gameState);
+                        } else {
+                            // Use local AI decision maker
+                            QueryLocalAIDecisionMaker(gameState);
                         }
 
-                        // Clear the update flag after processing this frame's state
+                        // Clear the update flag after querying the AI source
                         GameStateMonitor.ClearUpdateFlag();
                     } else {
                         DebugLog.Write("[InputController] Game state is null");
@@ -127,6 +131,90 @@ namespace Celeste.Mod.AutoPlayer {
             isRunning = false;
             currentFrameIndex = 0;
             framesInCurrentInput = 0;
+        }
+
+        /// <summary>
+        /// Query the AI Decision Service via HTTP to get the next action sequence
+        /// </summary>
+        private async Task QueryAIDecisionServiceAsync(AIDecisionMaker.GameStateSnapshot gameState) {
+            try {
+                // Convert game state to DTO
+                var gameStateDto = GameStateDto.FromSnapshot(gameState);
+
+                // Serialize to JSON
+                var json = JsonSerializer.Serialize(gameStateDto);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                // Send POST request to AI Decision Service
+                var response = await httpClient.PostAsync(AI_DECISION_SERVICE_URL, content);
+
+                if (response.IsSuccessStatusCode) {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    DebugLog.Write($"[InputController] AI Service response: {responseContent}");
+
+                    // Parse the response
+                    using (var doc = JsonDocument.Parse(responseContent)) {
+                        var root = doc.RootElement;
+
+                        if (root.TryGetProperty("sequence", out var sequenceElement)) {
+                            var sequence = JsonSerializer.Deserialize<InputFrameDto[]>(sequenceElement.GetRawText());
+
+                            if (sequence != null && sequence.Length > 0) {
+                                // Only replace sequence if we've completed the current one
+                                if (inputs.Count == 0 || currentFrameIndex >= inputs.Count) {
+                                    DebugLog.Write($"[InputController] AI Decision Changed: {sequence.Length} frames queued");
+                                    inputs.Clear();
+
+                                    // Convert DTOs to InputFrames
+                                    foreach (var dto in sequence) {
+                                        inputs.Add(dto.ToInputFrame());
+                                    }
+
+                                    currentFrameIndex = 0;
+                                    framesInCurrentInput = 0;
+                                } else {
+                                    DebugLog.Write("[InputController] Ignoring new sequence - current sequence still playing");
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    DebugLog.Write($"[InputController] AI Service error: HTTP {response.StatusCode}");
+                }
+            } catch (HttpRequestException ex) {
+                DebugLog.Write($"[InputController] HTTP error: {ex.Message}");
+            } catch (TaskCanceledException) {
+                DebugLog.Write("[InputController] AI Service request timeout");
+            } catch (JsonException ex) {
+                DebugLog.Write($"[InputController] JSON parse error: {ex.Message}");
+            } catch (Exception ex) {
+                DebugLog.Write($"[InputController] Unexpected error: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Query the local AIDecisionMaker class to get the next action sequence
+        /// </summary>
+        private void QueryLocalAIDecisionMaker(AIDecisionMaker.GameStateSnapshot gameState) {
+            try {
+                // Call the local AI decision maker
+                var sequence = AIDecisionMaker.DecideNextAction(gameState);
+
+                if (sequence != null && sequence.Length > 0) {
+                    // Only replace sequence if we've completed the current one
+                    if (inputs.Count == 0 || currentFrameIndex >= inputs.Count) {
+                        DebugLog.Write($"[InputController] Local AI Decision Changed: {sequence.Length} frames queued");
+                        inputs.Clear();
+                        inputs.AddRange(sequence);
+                        currentFrameIndex = 0;
+                        framesInCurrentInput = 0;
+                    } else {
+                        DebugLog.Write("[InputController] Ignoring new sequence - current sequence still playing");
+                    }
+                }
+            } catch (Exception ex) {
+                DebugLog.Write($"[InputController] Local AI error: {ex.Message}");
+            }
         }
     }
 }
