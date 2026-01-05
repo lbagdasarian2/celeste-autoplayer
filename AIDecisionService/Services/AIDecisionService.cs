@@ -7,14 +7,8 @@ namespace AIDecisionService.Services;
 /// </summary>
 public class AIDecisionService
 {
-    // Actions enum values (must match the Celeste mod)
-    private const int ACTIONS_NONE = 0;
-    private const int ACTIONS_LEFT = 1 << 0;    // 1
-    private const int ACTIONS_RIGHT = 1 << 1;   // 2
-    private const int ACTIONS_JUMP = 1 << 2;    // 4
-    private const int ACTIONS_DASH = 1 << 3;    // 8
-    private const int ACTIONS_UP = 1 << 4;      // 16
-    private const int ACTIONS_DOWN = 1 << 5;    // 32
+    // Track previous state to calculate movement delta (static so it persists across requests)
+    private static GameStateDto? _previousState = null;
 
     /// <summary>
     /// Decides what action to take based on current game state
@@ -24,29 +18,25 @@ public class AIDecisionService
     {
         if (state == null)
         {
-            return new[] { new InputFrameDto { Action = ACTIONS_NONE, Frames = 1 } };
+            return ActionSequences.NoAction();
         }
 
         // Log state at this decision point
-        Console.WriteLine($"[AIDecisionService] Querying: OnGround={state.OnGround}, PlayerY={state.PlayerY:F1}, SpeedY={state.PlayerSpeedY:F2}");
+        Console.WriteLine($"[AIDecisionService] Querying: OnGround={state.OnGround}, PlayerX={state.PlayerX:F1}, PlayerY={state.PlayerY:F1}, SpeedY={state.PlayerSpeedY:F2}");
 
-        // If player is on ground, perform the jump sequence
-        if (state.OnGround)
+        // Calculate pixel movement since last decision (both horizontal and vertical)
+        if (_previousState != null)
         {
-            Console.WriteLine("[AIDecisionService] Decision: JUMP sequence (10 frames jump, then immediately dash+up+right+jump for 20 frames)");
-
-            // Build the input sequence:
-            // 1. Hold jump for 10 frames
-            // 2. Hold dash + up + right + jump for 20 frames (no gap, immediate combo)
-            return new[]
-            {
-                new InputFrameDto { Action = ACTIONS_JUMP, Frames = 10 },
-                new InputFrameDto { Action = ACTIONS_DASH | ACTIONS_UP | ACTIONS_RIGHT | ACTIONS_JUMP, Frames = 20 }
-            };
+            float deltaX = state.PlayerX - _previousState.PlayerX;
+            float deltaY = state.PlayerY - _previousState.PlayerY;
+            Console.WriteLine($"[AIDecisionService] Movement Result: ΔX={deltaX:F1} pixels, ΔY={deltaY:F1} pixels (from ({_previousState.PlayerX:F1},{_previousState.PlayerY:F1}) to ({state.PlayerX:F1},{state.PlayerY:F1}))");
         }
 
-        // Default: just return None (no action when not on ground)
-        Console.WriteLine("[AIDecisionService] Decision: None (not on ground)");
-        return new[] { new InputFrameDto { Action = ACTIONS_NONE, Frames = 1 } };
+        // Store current state for next decision
+        _previousState = state;
+
+        // Always return LongJumpDashCombo for calibration
+        Console.WriteLine($"[AIDecisionService] Decision: LONG JUMP DASH COMBO - Input at PlayerX={state.PlayerX:F1}, PlayerY={state.PlayerY:F1}");
+        return ActionSequences.LongJumpDashCombo();
     }
 }
