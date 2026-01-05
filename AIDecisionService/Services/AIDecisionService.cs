@@ -38,7 +38,7 @@ public class AIDecisionService
         // Store current state for next decision
         _previousState = state;
 
-        // Check if we can safely perform LongJumpDashCombo (64 pixels horizontal)
+        // Check if we can safely perform LongJumpDashCombo (75 pixels horizontal)
         float landingX = state.PlayerX + ActionSequences.LONG_JUMPDASH_COMBO_HORIZONTAL_DISTANCE;
 
         if (WouldLandOnSpike(landingX, state.PlayerY, state))
@@ -123,33 +123,74 @@ public class AIDecisionService
         int tileX = (int)(landingX / 8f);
         int currentTileY = (int)(currentY / 8f);
 
-        // Search both upward and downward from current Y position to find ground
-        // Check within a reasonable range (64 pixels up and down)
-        int searchRangeUp = Math.Max(0, currentTileY - 8);   // 64 pixels up (8 tiles)
+        Console.WriteLine($"[AIDecisionService] HasSolidGround: landingX={landingX:F1} -> tileX={tileX}, currentY={currentY:F1} -> tileY={currentTileY}");
+
+        // Check if landing X is past the right boundary of the room
+        // This counts as solid ground since the player would transition to the next room
+        float roomRightBoundary = state.LevelBoundsX + state.LevelBoundsW;
+        if (landingX >= roomRightBoundary)
+        {
+            Console.WriteLine($"[AIDecisionService] Landing X={landingX:F1} is past right boundary ({roomRightBoundary:F1}) - treating as solid (room transition)");
+            return true;
+        }
+
+        // Search both upward and downward from current Y position to find ground we can land on
+        // We need to find a solid tile that has air above it (a proper landing surface)
+        int searchRangeUp = Math.Max(0, currentTileY - 12);   // 96 pixels up (12 tiles)
         int searchRangeDown = Math.Min(rows.Length, currentTileY + 8); // 64 pixels down (8 tiles)
+
+        Console.WriteLine($"[AIDecisionService] Searching rows {searchRangeUp} to {searchRangeDown-1} at column {tileX}");
 
         for (int searchY = searchRangeUp; searchY < searchRangeDown; searchY++)
         {
             if (searchY < 0 || searchY >= rows.Length)
+            {
+                Console.WriteLine($"[AIDecisionService] Row {searchY} out of bounds (total rows: {rows.Length})");
                 continue;
+            }
 
             string row = rows[searchY];
             if (tileX < 0 || tileX >= row.Length)
+            {
+                Console.WriteLine($"[AIDecisionService] Column {tileX} out of bounds at row {searchY} (row length: {row.Length})");
                 continue;
+            }
 
             char tile = row[tileX];
+            Console.WriteLine($"[AIDecisionService] Checking tile ({tileX}, {searchY}) = '{tile}'");
 
             // Any non-'0' character means there's a solid
             if (tile != '0')
             {
-                float solidY = searchY * 8f;
-                string direction = searchY < currentTileY ? "above" : (searchY > currentTileY ? "below" : "at");
-                Console.WriteLine($"[AIDecisionService] Found solid ground at tile ({tileX}, {searchY}) = '{tile}' ({direction} current position) for landing X={landingX:F1}");
-                return true;
+                // Check if there's air above this solid (making it a landable surface)
+                // Row 0 tiles are ceiling and cannot be landed on
+                bool hasAirAbove = false;
+                if (searchY > 0)
+                {
+                    string rowAbove = rows[searchY - 1];
+                    if (tileX < rowAbove.Length)
+                    {
+                        hasAirAbove = rowAbove[tileX] == '0';
+                    }
+                }
+                // If searchY == 0, it's the ceiling row - cannot land on it, so hasAirAbove stays false
+
+                if (hasAirAbove)
+                {
+                    float solidY = searchY * 8f;
+                    string direction = searchY < currentTileY ? "above" : (searchY > currentTileY ? "below" : "at");
+                    Console.WriteLine($"[AIDecisionService] Found landable surface at tile ({tileX}, {searchY}) = '{tile}' ({direction} current position) for landing X={landingX:F1}");
+                    return true;
+                }
+                else
+                {
+                    string reason = searchY == 0 ? "(ceiling row)" : "(no air above)";
+                    Console.WriteLine($"[AIDecisionService] Tile ({tileX}, {searchY}) = '{tile}' is solid but not landable {reason}");
+                }
             }
         }
 
-        Console.WriteLine($"[AIDecisionService] No solid ground found at X={landingX:F1} within 64 pixels up/down");
+        Console.WriteLine($"[AIDecisionService] No solid ground found at X={landingX:F1} within search range");
         return false;
     }
 }
