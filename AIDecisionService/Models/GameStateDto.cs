@@ -27,6 +27,8 @@ public class GameStateDto
 {
     public float PlayerX { get; set; }
     public float PlayerY { get; set; }
+    public float PlayerRemX { get; set; }
+    public float PlayerRemY { get; set; }
     public float PlayerSpeedX { get; set; }
     public float PlayerSpeedY { get; set; }
     public bool OnGround { get; set; }

@@ -10,12 +10,13 @@ namespace Celeste.Mod.AutoPlayer {
     internal static class GameStateMonitor {
         private static readonly HttpClient httpClient = new();
         private const string GAMESTATE_URL = "http://localhost:32270/tas/game_state";
-        private const int FETCH_INTERVAL = 300; // Fetch every 100 frames (~1.7s)
+        private const int FETCH_INTERVAL = 200; // Fetch every 10 frames (~0.17s at 60 FPS)
         private static bool hooksApplied = false;
         private static bool monitoringEnabled = false;
         private static int frameCounter = -1; // Start at -1 so first frame triggers fetch immediately
         private static AIDecisionMaker.GameStateSnapshot latestGameState = null;
         private static bool gameStateUpdatedThisFrame = false;
+        private static int skipCounter = 0; // Counter for skipping when PositionRemainder is (0,0)
 
         internal static void Initialize() {
             if (hooksApplied) {
@@ -59,7 +60,14 @@ namespace Celeste.Mod.AutoPlayer {
             orig(self, gameTime);
 
             if (monitoringEnabled) {
+
+                // Handle skip counter if active
+                if (skipCounter > 0) {
+                    skipCounter--;
+                    return;
+                }
                 frameCounter++;
+
                 // Fetch and log game state every FETCH_INTERVAL frames
                 if (frameCounter >= FETCH_INTERVAL) {
                     frameCounter = 0;
@@ -181,6 +189,8 @@ namespace Celeste.Mod.AutoPlayer {
                         latestGameState = new AIDecisionMaker.GameStateSnapshot {
                             PlayerX = posX,
                             PlayerY = posY,
+                            PlayerRemX = posRemX,
+                            PlayerRemY = posRemY,
                             PlayerSpeedX = speedX,
                             PlayerSpeedY = speedY,
                             OnGround = onGround,
@@ -204,6 +214,12 @@ namespace Celeste.Mod.AutoPlayer {
                             WindTriggers = windTriggers,
                             JumpThrus = jumpThrus
                         };
+
+                        // If PositionRemainder is (0, 0), skip the next FETCH_INTERVAL frames
+                        if (posRemX == 0f && posRemY == 0f) {
+                            skipCounter = FETCH_INTERVAL * 3;
+                            DebugLog.Write($"[GameStateMonitor] PositionRemainder is (0,0) - skipping next {FETCH_INTERVAL} frames");
+                        }
 
                         // Mark that game state was updated this frame
                         gameStateUpdatedThisFrame = true;
