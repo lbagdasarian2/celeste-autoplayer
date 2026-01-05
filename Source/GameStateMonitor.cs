@@ -10,13 +10,14 @@ namespace Celeste.Mod.AutoPlayer {
     internal static class GameStateMonitor {
         private static readonly HttpClient httpClient = new();
         private const string GAMESTATE_URL = "http://localhost:32270/tas/game_state";
-        private const int FETCH_INTERVAL = 200; // Fetch every 10 frames (~0.17s at 60 FPS)
+        private const int FETCH_INTERVAL = 30; // Fetch every 10 frames (~0.17s at 60 FPS)
         private static bool hooksApplied = false;
         private static bool monitoringEnabled = false;
         private static int frameCounter = -1; // Start at -1 so first frame triggers fetch immediately
         private static AIDecisionMaker.GameStateSnapshot latestGameState = null;
         private static bool gameStateUpdatedThisFrame = false;
-        private static int skipCounter = 0; // Counter for skipping when PositionRemainder is (0,0)
+        private static int skipCounter = 0; // Counter for skipping when at starting position
+        private static DateTime lastSkipActivation = DateTime.MinValue; // Track when skip was last activated
 
         internal static void Initialize() {
             if (hooksApplied) {
@@ -64,6 +65,7 @@ namespace Celeste.Mod.AutoPlayer {
                 // Handle skip counter if active
                 if (skipCounter > 0) {
                     skipCounter--;
+                    DebugLog.Write($"Skip counter decrementing: {skipCounter}");
                     return;
                 }
                 frameCounter++;
@@ -215,10 +217,13 @@ namespace Celeste.Mod.AutoPlayer {
                             JumpThrus = jumpThrus
                         };
 
-                        // If PositionRemainder is (0, 0), skip the next FETCH_INTERVAL frames
-                        if (posRemX == 0f && posRemY == 0f) {
+                        // If Position is at starting coordinates, skip the next FETCH_INTERVAL * 3 frames
+                        // Only activate if it hasn't been activated in the last 15 seconds
+                        var now = DateTime.UtcNow;
+                        if (posX < 90 && skipCounter == 0 && (now - lastSkipActivation).TotalSeconds >= 4) {
                             skipCounter = FETCH_INTERVAL * 3;
-                            DebugLog.Write($"[GameStateMonitor] PositionRemainder is (0,0) - skipping next {FETCH_INTERVAL} frames");
+                            lastSkipActivation = now;
+                            DebugLog.Write($"[GameStateMonitor] Skip activated at position (19, 144) - skipping next {skipCounter} frames");
                         }
 
                         // Mark that game state was updated this frame
@@ -272,6 +277,11 @@ namespace Celeste.Mod.AutoPlayer {
         internal static void ClearUpdateFlag() {
             gameStateUpdatedThisFrame = false;
             DebugLog.Write("[GameStateMonitor] Update flag cleared after AI processing");
+        }
+
+        /// Check if skip counter is currently active (pausing game state fetches)
+        internal static bool IsSkipCounterActive() {
+            return skipCounter > 0;
         }
 
         /// Parse an array of bounds objects from JSON

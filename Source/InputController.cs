@@ -54,6 +54,12 @@ namespace Celeste.Mod.AutoPlayer {
                 return Actions.None;
             }
 
+            // If skip counter is active, don't provide any actions (paused at starting position)
+            if (GameStateMonitor.IsSkipCounterActive()) {
+                DebugLog.Write("[InputController] Skip counter active - returning Actions.None");
+                return Actions.None;
+            }
+
             // Dynamic AI mode: query the AI decision service based on current game state
             if (useDynamicAI) {
                 // Only query AI if game state was updated this frame
