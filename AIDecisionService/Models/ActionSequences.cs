@@ -26,7 +26,7 @@ public static class ActionSequences
     // LongJumpDashCombo: 45 total frames (5 jump + 40 dash combo) = 64 pixels horizontal
     // Vertical: 0 pixels on flat ground (lands back at same level)
     // Note: If there's a ledge, vertical will be min(0, -ledge_height)
-    private const float LONG_JUMPDASH_COMBO_HORIZONTAL_DISTANCE = 64f;  // pixels
+    public const float LONG_JUMPDASH_COMBO_HORIZONTAL_DISTANCE = 75f;  // pixels
 
     /// <summary>
     /// Jump for 10 frames, then immediately dash+up+right+jump for 20 frames
