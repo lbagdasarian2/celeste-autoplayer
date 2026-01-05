@@ -23,6 +23,9 @@ public class AIDecisionService
 
         // Log state at this decision point
         Console.WriteLine($"[AIDecisionService] Querying: OnGround={state.OnGround}, PlayerX={state.PlayerX:F1}, PlayerY={state.PlayerY:F1}, SpeedY={state.PlayerSpeedY:F2}");
+        Console.WriteLine($"[AIDecisionService] RoomName={state.RoomName}, ChapterTime={state.ChapterTime}");
+        Console.WriteLine($"[AIDecisionService] Spikes={state.Spikes.Length}, StaticSolids={state.StaticSolids.Length}, Spinners={state.Spinners.Length}");
+        Console.WriteLine($"[AIDecisionService] SolidsData length={state.SolidsData.Length} chars");
 
         // Calculate pixel movement since last decision (both horizontal and vertical)
         if (_previousState != null)

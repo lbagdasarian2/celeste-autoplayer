@@ -3,6 +3,20 @@ using System;
 namespace Celeste.Mod.AutoPlayer {
     /// Analyzes game state and determines the next action for the autoplayer
     internal static class AIDecisionMaker {
+        /// Rectangular bounds
+        public class BoundsData {
+            public float X { get; set; }
+            public float Y { get; set; }
+            public float W { get; set; }
+            public float H { get; set; }
+        }
+
+        /// Spike entity with bounds and direction
+        public class SpikeData {
+            public BoundsData Bounds { get; set; }
+            public int Direction { get; set; }
+        }
+
         /// Game state snapshot for decision making
         public class GameStateSnapshot {
             public float PlayerX { get; set; }
@@ -20,6 +34,15 @@ namespace Celeste.Mod.AutoPlayer {
             public float WindX { get; set; }
             public float WindY { get; set; }
             public string PlayerStateName { get; set; }
+            public string ChapterTime { get; set; }
+            public string RoomName { get; set; }
+            public string SolidsData { get; set; }
+            public BoundsData[] StaticSolids { get; set; }
+            public BoundsData[] Spinners { get; set; }
+            public BoundsData[] Lightning { get; set; }
+            public SpikeData[] Spikes { get; set; }
+            public BoundsData[] WindTriggers { get; set; }
+            public BoundsData[] JumpThrus { get; set; }
         }
 
         /// Reset AI state when autoplayer starts

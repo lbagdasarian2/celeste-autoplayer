@@ -3,6 +3,24 @@ using System;
 namespace Celeste.Mod.AutoPlayer {
 
     /// <summary>
+    /// Rectangular bounds
+    /// </summary>
+    public class BoundsDataDto {
+        public float X { get; set; }
+        public float Y { get; set; }
+        public float W { get; set; }
+        public float H { get; set; }
+    }
+
+    /// <summary>
+    /// Spike entity with bounds and direction
+    /// </summary>
+    public class SpikeDataDto {
+        public BoundsDataDto Bounds { get; set; }
+        public int Direction { get; set; }
+    }
+
+    /// <summary>
     /// Data Transfer Object for game state - used to send game state to AIDecisionService
     /// </summary>
     public class GameStateDto {
@@ -21,6 +39,15 @@ namespace Celeste.Mod.AutoPlayer {
         public float WindX { get; set; }
         public float WindY { get; set; }
         public string PlayerStateName { get; set; } = "";
+        public string ChapterTime { get; set; } = "";
+        public string RoomName { get; set; } = "";
+        public string SolidsData { get; set; } = "";
+        public BoundsDataDto[] StaticSolids { get; set; } = new BoundsDataDto[0];
+        public BoundsDataDto[] Spinners { get; set; } = new BoundsDataDto[0];
+        public BoundsDataDto[] Lightning { get; set; } = new BoundsDataDto[0];
+        public SpikeDataDto[] Spikes { get; set; } = new SpikeDataDto[0];
+        public BoundsDataDto[] WindTriggers { get; set; } = new BoundsDataDto[0];
+        public BoundsDataDto[] JumpThrus { get; set; } = new BoundsDataDto[0];
 
         /// <summary>
         /// Create a DTO from a GameStateSnapshot
@@ -41,8 +68,54 @@ namespace Celeste.Mod.AutoPlayer {
                 LevelBoundsH = snapshot.LevelBoundsH,
                 WindX = snapshot.WindX,
                 WindY = snapshot.WindY,
-                PlayerStateName = snapshot.PlayerStateName
+                PlayerStateName = snapshot.PlayerStateName ?? "",
+                ChapterTime = snapshot.ChapterTime ?? "",
+                RoomName = snapshot.RoomName ?? "",
+                SolidsData = snapshot.SolidsData ?? "",
+                StaticSolids = ConvertBoundsArray(snapshot.StaticSolids),
+                Spinners = ConvertBoundsArray(snapshot.Spinners),
+                Lightning = ConvertBoundsArray(snapshot.Lightning),
+                Spikes = ConvertSpikesArray(snapshot.Spikes),
+                WindTriggers = ConvertBoundsArray(snapshot.WindTriggers),
+                JumpThrus = ConvertBoundsArray(snapshot.JumpThrus)
             };
+        }
+
+        /// <summary>
+        /// Convert BoundsData array to DTO array
+        /// </summary>
+        private static BoundsDataDto[] ConvertBoundsArray(AIDecisionMaker.BoundsData[] source) {
+            if (source == null) return new BoundsDataDto[0];
+            var result = new BoundsDataDto[source.Length];
+            for (int i = 0; i < source.Length; i++) {
+                result[i] = new BoundsDataDto {
+                    X = source[i].X,
+                    Y = source[i].Y,
+                    W = source[i].W,
+                    H = source[i].H
+                };
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Convert SpikeData array to DTO array
+        /// </summary>
+        private static SpikeDataDto[] ConvertSpikesArray(AIDecisionMaker.SpikeData[] source) {
+            if (source == null) return new SpikeDataDto[0];
+            var result = new SpikeDataDto[source.Length];
+            for (int i = 0; i < source.Length; i++) {
+                result[i] = new SpikeDataDto {
+                    Bounds = new BoundsDataDto {
+                        X = source[i].Bounds.X,
+                        Y = source[i].Bounds.Y,
+                        W = source[i].Bounds.W,
+                        H = source[i].Bounds.H
+                    },
+                    Direction = source[i].Direction
+                };
+            }
+            return result;
         }
     }
 

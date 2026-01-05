@@ -154,6 +154,7 @@ namespace Celeste.Mod.AutoPlayer {
                         string chapterTime = "";
                         string roomName = "";
                         string playerStateName = "";
+                        string solidsData = "";
 
                         if (root.TryGetProperty("ChapterTime", out var timeElement)) {
                             chapterTime = timeElement.GetString() ?? "";
@@ -164,6 +165,17 @@ namespace Celeste.Mod.AutoPlayer {
                         if (root.TryGetProperty("PlayerStateName", out var stateElement)) {
                             playerStateName = stateElement.GetString() ?? "";
                         }
+                        if (root.TryGetProperty("SolidsData", out var solidsElement)) {
+                            solidsData = solidsElement.GetString() ?? "";
+                        }
+
+                        // Extract arrays
+                        var staticSolids = ParseBoundsArray(root, "StaticSolids");
+                        var spinners = ParseBoundsArray(root, "Spinners");
+                        var lightning = ParseBoundsArray(root, "Lightning");
+                        var spikes = ParseSpikesArray(root);
+                        var windTriggers = ParseBoundsArray(root, "WindTriggers");
+                        var jumpThrus = ParseBoundsArray(root, "JumpThrus");
 
                         // Create and store snapshot for AI decision making
                         latestGameState = new AIDecisionMaker.GameStateSnapshot {
@@ -181,7 +193,16 @@ namespace Celeste.Mod.AutoPlayer {
                             LevelBoundsH = levelBoundsH,
                             WindX = windX,
                             WindY = windY,
-                            PlayerStateName = playerStateName
+                            PlayerStateName = playerStateName,
+                            ChapterTime = chapterTime,
+                            RoomName = roomName,
+                            SolidsData = solidsData,
+                            StaticSolids = staticSolids,
+                            Spinners = spinners,
+                            Lightning = lightning,
+                            Spikes = spikes,
+                            WindTriggers = windTriggers,
+                            JumpThrus = jumpThrus
                         };
 
                         // Mark that game state was updated this frame
@@ -235,6 +256,57 @@ namespace Celeste.Mod.AutoPlayer {
         internal static void ClearUpdateFlag() {
             gameStateUpdatedThisFrame = false;
             DebugLog.Write("[GameStateMonitor] Update flag cleared after AI processing");
+        }
+
+        /// Parse an array of bounds objects from JSON
+        private static AIDecisionMaker.BoundsData[] ParseBoundsArray(JsonElement root, string propertyName) {
+            if (!root.TryGetProperty(propertyName, out var arrayElement)) {
+                return new AIDecisionMaker.BoundsData[0];
+            }
+
+            if (arrayElement.ValueKind != JsonValueKind.Array) {
+                return new AIDecisionMaker.BoundsData[0];
+            }
+
+            var list = new System.Collections.Generic.List<AIDecisionMaker.BoundsData>();
+            foreach (var item in arrayElement.EnumerateArray()) {
+                var bounds = new AIDecisionMaker.BoundsData();
+                if (item.TryGetProperty("X", out var xElem)) bounds.X = xElem.GetSingle();
+                if (item.TryGetProperty("Y", out var yElem)) bounds.Y = yElem.GetSingle();
+                if (item.TryGetProperty("W", out var wElem)) bounds.W = wElem.GetSingle();
+                if (item.TryGetProperty("H", out var hElem)) bounds.H = hElem.GetSingle();
+                list.Add(bounds);
+            }
+            return list.ToArray();
+        }
+
+        /// Parse the Spikes array from JSON
+        private static AIDecisionMaker.SpikeData[] ParseSpikesArray(JsonElement root) {
+            if (!root.TryGetProperty("Spikes", out var arrayElement)) {
+                return new AIDecisionMaker.SpikeData[0];
+            }
+
+            if (arrayElement.ValueKind != JsonValueKind.Array) {
+                return new AIDecisionMaker.SpikeData[0];
+            }
+
+            var list = new System.Collections.Generic.List<AIDecisionMaker.SpikeData>();
+            foreach (var item in arrayElement.EnumerateArray()) {
+                var spike = new AIDecisionMaker.SpikeData();
+                spike.Bounds = new AIDecisionMaker.BoundsData();
+
+                if (item.TryGetProperty("Bounds", out var boundsElem)) {
+                    if (boundsElem.TryGetProperty("X", out var xElem)) spike.Bounds.X = xElem.GetSingle();
+                    if (boundsElem.TryGetProperty("Y", out var yElem)) spike.Bounds.Y = yElem.GetSingle();
+                    if (boundsElem.TryGetProperty("W", out var wElem)) spike.Bounds.W = wElem.GetSingle();
+                    if (boundsElem.TryGetProperty("H", out var hElem)) spike.Bounds.H = hElem.GetSingle();
+                }
+                if (item.TryGetProperty("Direction", out var dirElem)) {
+                    spike.Direction = dirElem.GetInt32();
+                }
+                list.Add(spike);
+            }
+            return list.ToArray();
         }
     }
 }
