@@ -10,7 +10,7 @@ namespace Celeste.Mod.AutoPlayer {
     internal static class GameStateMonitor {
         private static readonly HttpClient httpClient = new();
         private const string GAMESTATE_URL = "http://localhost:32270/tas/game_state";
-        private const int FETCH_INTERVAL = 30; // Fetch every 10 frames (~0.17s at 60 FPS)
+        private const int FETCH_INTERVAL = 20; // Fetch every 10 frames (~0.17s at 60 FPS)
         private static bool hooksApplied = false;
         private static bool monitoringEnabled = false;
         private static int frameCounter = -1; // Start at -1 so first frame triggers fetch immediately
@@ -220,7 +220,7 @@ namespace Celeste.Mod.AutoPlayer {
                         // If Position is at starting coordinates, skip the next FETCH_INTERVAL * 3 frames
                         // Only activate if it hasn't been activated in the last 15 seconds
                         var now = DateTime.UtcNow;
-                        if (posX < 90 && skipCounter == 0 && (now - lastSkipActivation).TotalSeconds >= 4) {
+                        if (posX < 90 && skipCounter == 0 && (now - lastSkipActivation).TotalSeconds >= 2) {
                             skipCounter = FETCH_INTERVAL * 3;
                             lastSkipActivation = now;
                             DebugLog.Write($"[GameStateMonitor] Skip activated at position (19, 144) - skipping next {skipCounter} frames");
